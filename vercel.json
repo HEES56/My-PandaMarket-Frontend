@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://to-do-domain.com/api/$1"
+      "destination": "https://to-do-domain.com/$1"
     }
   ]
 }
