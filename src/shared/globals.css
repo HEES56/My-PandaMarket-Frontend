@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "pretendard";
+  font-style: normal;
+  src: url("/fonts/Pretendard.woff2") format("woff2");
+}
+
+@theme {
+  --color-custom-color-blue: #3692ff;
+  --color-custom-color-red: #f74747;
+
+  --color-custom-color-bg-blue: #cfe5ff;
+  --color-custom-color-bg-cool-blue: #e6f2ff;
+  --color-custom-color-card-gray: #f9fafb;
+  --color-custom-color-list-gray: #fcfcfc;
+
+  --color-custom-color-border-gray: #e5e7eb;
+
+  --color-custom-text-gray-50: #9ca3af;
+  --color-custom-text-gray-200: #6b7280;
+  --color-custom-text-gray-400: #4b5563;
+  --color-custom-text-gray-800: #1f2937;
+
+  --color-custom-text-black-800: #1f2937;
+  --color-custom-text-black-900: #111827;
+
+  --color-custom-button-gray-200: #e5e7eb;
+
+  --color-custom-input-gray-100: #f3f4f6;
+}
