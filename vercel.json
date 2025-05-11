@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "https://to-do-domain.com/$1"
+      "source": "/:path*",
+      "destination": "https://to-do-domain.com/:path*"
     }
   ]
 }
