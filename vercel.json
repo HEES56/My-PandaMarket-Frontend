@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://to-do-domain.com/api/$1"
+    }
+  ]
+}
