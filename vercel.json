@@ -1,8 +1,0 @@
-{
-  "rewrites": [
-    {
-      "source": "/:path*",
-      "destination": "https://api.to-do-domain.com/:path*"
-    }
-  ]
-}
