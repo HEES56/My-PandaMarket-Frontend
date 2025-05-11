@@ -49,6 +49,7 @@ export const customFetch = async (
     headers,
     body,
     credentials: "include",
+    mode: "cors",
   });
 
   if (res.status === 401 && isClient) {
@@ -59,6 +60,7 @@ export const customFetch = async (
       {
         method: "POST",
         credentials: "include",
+        mode: "cors",
       }
     );
 
