@@ -18,6 +18,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: "/:path*",
+        destination: "https://to-do-domain.com/:path*",
+      },
+    ];
+  },
 };
 
 export default nextConfig;
