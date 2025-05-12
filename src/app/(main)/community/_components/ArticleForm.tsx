@@ -7,6 +7,7 @@ import Image from "next/image";
 import PlusIcon from "@/shared/assets/Img/input-icon/ic_plus.png";
 import CloseIcon from "@/shared/assets/Img/button-image/X-round-Icon.png.png";
 import { useCreateArticle, useUpdateArticle } from "@/api/article/articleHook";
+import { uploadImageToS3 } from "@/api/article/articleApi";
 import { Article } from "@/types/types";
 import ImageWrapper from "@/shared/components/ImageWrapper/ImageWrapper";
 
@@ -25,7 +26,7 @@ export default function ArticleForm({
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>(
     initialData?.imageUrls || []
   );
-  const [newImages, setNewImages] = useState<File[]>([]);
+  const [newImageUrls, setNewImageUrls] = useState<string[]>([]); // ✅ Presigned 업로드된 URL
 
   const createMutation = useCreateArticle((id) =>
     router.push(`/community/${id}`)
@@ -34,11 +35,18 @@ export default function ArticleForm({
     router.push(`/community/${id}`)
   );
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    setNewImages((prev) => [...prev, ...files]);
+    for (const file of files) {
+      try {
+        const url = await uploadImageToS3(file);
+        setNewImageUrls((prev) => [...prev, url]);
+      } catch (err) {
+        console.error("S3 업로드 실패:", err);
+      }
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -51,14 +59,10 @@ export default function ArticleForm({
     const formData = new FormData();
     formData.append("title", title);
     formData.append("content", content);
-
-    newImages.forEach((file) => {
-      formData.append("images", file);
-    });
-
-    existingImageUrls.forEach((url) => {
-      formData.append("imageUrls", url);
-    });
+    formData.append(
+      "imageUrls",
+      JSON.stringify([...existingImageUrls, ...newImageUrls])
+    );
 
     if (category === "create") {
       createMutation.mutate(formData);
@@ -72,7 +76,7 @@ export default function ArticleForm({
   };
 
   const removeNewImage = (index: number) => {
-    setNewImages((prev) => prev.filter((_, i) => i !== index));
+    setNewImageUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -120,7 +124,7 @@ export default function ArticleForm({
         </label>
 
         <div className="mt-4 flex items-start gap-4 flex-wrap">
-          {existingImageUrls.length + newImages.length < 3 && (
+          {existingImageUrls.length + newImageUrls.length < 3 && (
             <label className="flex flex-col items-center justify-center w-[120px] h-[120px] bg-custom-input-gray-100 rounded-md cursor-pointer shrink-0">
               <Image src={PlusIcon} alt="이미지 추가" width={32} height={32} />
               <p className="text-xs text-gray-400 mt-1">이미지 등록</p>
@@ -151,10 +155,10 @@ export default function ArticleForm({
             </div>
           ))}
 
-          {newImages.map((file, i) => (
+          {newImageUrls.map((url, i) => (
             <div key={`new-${i}`} className="relative w-24 h-24">
-              <Image
-                src={URL.createObjectURL(file)}
+              <ImageWrapper
+                src={url}
                 alt={`새이미지-${i}`}
                 fill
                 className="object-cover rounded-md border"
