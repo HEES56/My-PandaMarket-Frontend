@@ -93,3 +93,28 @@ export const unlikeProduct = async (id: string): Promise<void> => {
   });
   if (!res.ok) throw new Error("상품 좋아요 취소 실패");
 };
+
+export const uploadImageToS3 = async (file: File): Promise<string> => {
+  const fileType = file.type;
+
+  const res = await customFetch(
+    `/products/presigned-url?fileType=${fileType}`,
+    {
+      method: "GET",
+    }
+  );
+
+  const { url, key } = await res.json();
+
+  const uploadRes = await fetch(url, {
+    method: "PUT",
+    headers: { "Content-Type": fileType },
+    body: file,
+  });
+
+  if (!uploadRes.ok) {
+    throw new Error("S3 업로드 실패");
+  }
+
+  return `https://${process.env.NEXT_PUBLIC_S3_BUCKET}.s3.${process.env.NEXT_PUBLIC_S3_REGION}.amazonaws.com/${key}`;
+};

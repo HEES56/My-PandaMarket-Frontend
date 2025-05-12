@@ -1,119 +1,89 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+
 import PlusIcon from "@/shared/assets/Img/input-icon/ic_plus.png";
 import CloseIcon from "@/shared/assets/Img/button-image/X-round-Icon.png.png";
-import { useCreateProduct, useEditProduct } from "@/api/product/productHooks";
-import { Product } from "@/types/types";
+import { useCreateArticle, useUpdateArticle } from "@/api/article/articleHook";
+import { uploadImageToS3 } from "@/api/article/articleApi";
+import { Article } from "@/types/types";
 import ImageWrapper from "@/shared/components/ImageWrapper/ImageWrapper";
 
-interface ProductFormProps {
+interface ArticleFormProps {
   category: "create" | "edit";
-  initialData?: Product;
+  initialData?: Article;
 }
 
-export default function ProductForm({
+export default function ArticleForm({
   category,
   initialData,
-}: ProductFormProps) {
+}: ArticleFormProps) {
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  const [name, setName] = useState(initialData?.name || "");
-  const [description, setDescription] = useState(
-    initialData?.description || ""
-  );
-  const [price, setPrice] = useState(initialData?.price?.toString() ?? "");
-  const [tags, setTags] = useState<string[]>(initialData?.tags || []);
-  const [tagInput, setTagInput] = useState("");
-  const [images, setImages] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>(
+  const [title, setTitle] = useState(initialData?.title || "");
+  const [content, setContent] = useState(initialData?.content || "");
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>(
     initialData?.imageUrls || []
   );
+  const [newImageUrls, setNewImageUrls] = useState<string[]>([]); // ✅ Presigned 업로드된 URL
 
-  const createMutation = useCreateProduct({
-    onSuccess: () => router.push("/items"),
-  });
-  const updateMutation = useEditProduct(initialData?.id ?? "", {
-    onSuccess: (id) => router.push(`/items/${id}`),
-  });
+  const createMutation = useCreateArticle((id) =>
+    router.push(`/community/${id}`)
+  );
+  const updateMutation = useUpdateArticle((id) =>
+    router.push(`/community/${id}`)
+  );
 
-  useEffect(() => {
-    if (initialData?.imageUrls) {
-      setPreviewUrls(initialData.imageUrls);
-    }
-  }, [initialData]);
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    if (files.length > 0) {
-      const previews = files.map((file) => URL.createObjectURL(file));
+    if (files.length === 0) return;
 
-      setImages((prev) => [...prev, ...files]);
-      setPreviewUrls((prev) => [...prev, ...previews]);
+    for (const file of files) {
+      try {
+        const url = await uploadImageToS3(file);
+        setNewImageUrls((prev) => [...prev, url]);
+      } catch (err) {
+        console.error("S3 업로드 실패:", err);
+      }
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !description.trim()) {
-      alert("상품명과 설명을 입력해주세요!");
+    if (!title.trim() || !content.trim()) {
+      alert("제목과 내용을 입력해주세요!");
       return;
     }
 
-    try {
-      const formData = new FormData();
-      formData.append("name", name);
-      formData.append("description", description);
-      formData.append("price", price.trim() ? price : "0");
-      formData.append("tags", JSON.stringify(tags));
-      images.forEach((img) => formData.append("images", img));
-      const existingUrls = previewUrls.filter(
-        (url) => !url.startsWith("blob:")
-      );
-      formData.append("existingImageUrls", JSON.stringify(existingUrls));
-      if (category === "create") {
-        createMutation.mutate(formData, {
-          onError: (error) => {
-            console.error("Mutation 에러:", error);
-          },
-        });
-      } else if (category === "edit" && initialData?.id) {
-        updateMutation.mutate(formData);
-      }
-    } catch (error) {
-      console.error("🔥 mutate 실패", error);
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("content", content);
+    formData.append(
+      "imageUrls",
+      JSON.stringify([...existingImageUrls, ...newImageUrls])
+    );
+
+    if (category === "create") {
+      createMutation.mutate(formData);
+    } else if (category === "edit" && initialData?.id) {
+      updateMutation.mutate({ id: initialData.id, formData });
     }
   };
 
-  const removeImage = (index: number) => {
-    setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
-    setImages((prev) => prev.filter((_, i) => i !== index));
-    if (fileInputRef.current) fileInputRef.current.value = "";
+  const removeExistingImage = (index: number) => {
+    setExistingImageUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleAddTag = () => {
-    const trimmed = tagInput.trim();
-    if (trimmed && !tags.includes(trimmed)) {
-      setTags((prev) => [...prev, trimmed]);
-      setTagInput("");
-    }
-  };
-
-  const handleRemoveTag = (tag: string) => {
-    setTags((prev) => prev.filter((t) => t !== tag));
+  const removeNewImage = (index: number) => {
+    setNewImageUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col w-full gap-6 pb-[200px]"
-    >
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6 pb-[200px]">
       <section className="flex justify-between">
         <h1 className="text-xl font-bold text-custom-text-black-800">
-          {category === "create" ? "상품 등록하기" : "상품 수정하기"}
+          {category === "create" ? "게시글 쓰기" : "게시글 수정"}
         </h1>
         <button
           type="submit"
@@ -123,126 +93,85 @@ export default function ProductForm({
         </button>
       </section>
 
-      <section className="flex flex-col gap-10 w-full">
-        <div className="w-full xl:w-1/2">
-          <label className="text-lg font-bold text-custom-text-black-800">
-            *상품 이미지
-          </label>
-          <div className="mt-4 flex gap-4">
-            {previewUrls.length < 3 && (
-              <label className="flex flex-col items-center justify-center w-[120px] h-[120px] bg-custom-input-gray-100 rounded-md cursor-pointer shrink-0">
-                <Image
-                  src={PlusIcon}
-                  alt="이미지 추가"
-                  width={32}
-                  height={32}
-                />
-                <p className="text-xs text-gray-400 mt-1">이미지 등록</p>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  ref={fileInputRef}
-                  className="hidden"
-                />
-              </label>
-            )}
+      <section>
+        <label className="text-lg font-bold text-custom-text-black-800">
+          *제목
+        </label>
+        <input
+          type="text"
+          placeholder="제목을 입력해주세요"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-full px-6 py-4 bg-custom-input-gray-100 rounded-xl focus:outline-none"
+        />
+      </section>
 
-            <div className="flex flex-wrap gap-4">
-              {previewUrls.map((url, i) => (
-                <div key={i} className="relative w-24 h-24">
-                  <ImageWrapper
-                    src={url}
-                    alt={`preview-${i}`}
-                    fill
-                    className="object-cover rounded-md border"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(i)}
-                    className="absolute -top-2 -right-2"
-                  >
-                    <Image src={CloseIcon} alt="닫기" width={20} height={20} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+      <section>
+        <label className="text-lg font-bold text-custom-text-black-800">
+          *내용
+        </label>
+        <textarea
+          placeholder="내용을 입력해주세요"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          className="w-full h-[240px] px-6 py-4 bg-custom-input-gray-100 rounded-xl resize-none focus:outline-none"
+        />
+      </section>
 
-        <div className="flex-1 flex flex-col gap-6">
-          <section>
-            <label className="text-lg font-bold text-custom-text-black-800">
-              *상품명
-            </label>
-            <input
-              type="text"
-              placeholder="상품명을 입력해주세요"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-6 py-4 bg-custom-input-gray-100 rounded-xl focus:outline-none"
-            />
-          </section>
+      <section>
+        <label className="text-lg font-bold text-custom-text-black-800">
+          *이미지
+        </label>
 
-          <section>
-            <label className="text-lg font-bold text-custom-text-black-800">
-              *상품 소개
-            </label>
-            <textarea
-              placeholder="상품 설명을 입력해주세요"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full h-[240px] px-6 py-4 bg-custom-input-gray-100 rounded-xl resize-none focus:outline-none"
-            />
-          </section>
-
-          <section>
-            <label className="text-lg font-bold text-custom-text-black-800">
-              판매 가격
-            </label>
-            <input
-              type="number"
-              placeholder="숫자만 입력해주세요"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              className="w-full px-6 py-4 bg-custom-input-gray-100 rounded-xl focus:outline-none"
-            />
-          </section>
-
-          <section>
-            <label className="text-lg font-bold text-custom-text-black-800">
-              태그
-            </label>
-            <div className="flex gap-2 mt-2">
+        <div className="mt-4 flex items-start gap-4 flex-wrap">
+          {existingImageUrls.length + newImageUrls.length < 3 && (
+            <label className="flex flex-col items-center justify-center w-[120px] h-[120px] bg-custom-input-gray-100 rounded-md cursor-pointer shrink-0">
+              <Image src={PlusIcon} alt="이미지 추가" width={32} height={32} />
+              <p className="text-xs text-gray-400 mt-1">이미지 등록</p>
               <input
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) =>
-                  e.key === "Enter" && (e.preventDefault(), handleAddTag())
-                }
-                placeholder="태그를 입력해주세요"
-                className="w-full px-6 py-3 bg-custom-input-gray-100 rounded-xl focus:outline-none"
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
               />
+            </label>
+          )}
+
+          {existingImageUrls.map((url, i) => (
+            <div key={`existing-${i}`} className="relative w-24 h-24">
+              <ImageWrapper
+                src={url}
+                alt={`기존이미지-${i}`}
+                fill
+                className="object-cover rounded-md border"
+              />
+              <button
+                type="button"
+                onClick={() => removeExistingImage(i)}
+                className="absolute -top-2 -right-2"
+              >
+                <Image src={CloseIcon} alt="닫기" width={20} height={20} />
+              </button>
             </div>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="flex items-center gap-1 px-4 py-2 text-sm bg-custom-color-border-gray rounded-full cursor-pointer"
-                >
-                  #{tag}
-                  <Image
-                    src={CloseIcon}
-                    alt="태그 삭제"
-                    width={14}
-                    height={14}
-                    onClick={() => handleRemoveTag(tag)}
-                    className="ml-1"
-                  />
-                </span>
-              ))}
+          ))}
+
+          {newImageUrls.map((url, i) => (
+            <div key={`new-${i}`} className="relative w-24 h-24">
+              <ImageWrapper
+                src={url}
+                alt={`새이미지-${i}`}
+                fill
+                className="object-cover rounded-md border"
+              />
+              <button
+                type="button"
+                onClick={() => removeNewImage(i)}
+                className="absolute -top-2 -right-2"
+              >
+                <Image src={CloseIcon} alt="닫기" width={20} height={20} />
+              </button>
             </div>
-          </section>
+          ))}
         </div>
       </section>
     </form>
