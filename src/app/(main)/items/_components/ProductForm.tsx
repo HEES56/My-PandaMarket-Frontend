@@ -76,7 +76,8 @@ export default function ProductForm({
       const formData = new FormData();
       formData.append("name", name);
       formData.append("description", description);
-      formData.append("price", price.trim() ? price : "0");
+      formData.append("price", price.trim() ? Number(price).toString() : "0");
+
       formData.append("tags", JSON.stringify(tags));
       formData.append("imageUrls", JSON.stringify(previewUrls));
 
