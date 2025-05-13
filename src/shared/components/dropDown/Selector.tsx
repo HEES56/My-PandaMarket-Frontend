@@ -32,7 +32,7 @@ export default function Selector({
     setIsDeleting(true);
     try {
       if (type === "article") {
-        await deleteArticle({ id });
+        await deleteArticle(id);
         router.push(`${PATH.community}`);
       } else if (type === "product") {
         await deleteProduct(id);

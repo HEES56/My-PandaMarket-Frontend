@@ -74,16 +74,13 @@ export const updateArticle = async ({
   return { id: json.data.id };
 };
 
-export const deleteArticle = async ({
-  id,
-}: {
-  id: string;
-}): Promise<{ id: string }> => {
+export const deleteArticle = async (id: string): Promise<{ id: string }> => {
   const res = await customFetch(`/articles/${id}`, {
     method: "DELETE",
   });
 
   if (!res.ok) throw new Error("게시글 삭제 실패");
+
   return res.json();
 };
 
