@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import userIcon from "@/shared/assets/Img/user-icon/ic_profile.png";
 import likeIcon from "@/shared/assets/Img/button-image/Like_Icon.png";
 import { formatDay } from "@/lib/utill";
@@ -18,7 +17,6 @@ interface DetailArticleBoardProps {
 export default function DetailArticleBoard({
   article,
 }: DetailArticleBoardProps) {
-  const router = useRouter();
   const likeMutation = useFavoriteArticle(article.id);
   const unlikeMutation = useUnfavoriteArticle(article.id);
 
@@ -32,14 +30,6 @@ export default function DetailArticleBoard({
     }
   };
 
-  const handleDelete = () => {
-    router.push("/article");
-  };
-
-  const handleEdit = () => {
-    router.push(`/article/modify/${article.id}`);
-  };
-
   return (
     <div>
       <div className="flex flex-col gap-4 pb-4 border-b border-custom-color-border-gray">
@@ -47,12 +37,7 @@ export default function DetailArticleBoard({
           <p className="text-xl font-bold text-custom-text-black-800">
             {article.title}
           </p>
-          <Selector
-            type="article"
-            id={article.id}
-            onDelete={handleDelete}
-            onEdit={handleEdit}
-          />
+          <Selector type="article" id={article.id} />
         </section>
 
         <section className="flex gap-4">
