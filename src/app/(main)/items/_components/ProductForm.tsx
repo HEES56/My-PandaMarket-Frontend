@@ -71,7 +71,6 @@ export default function ProductForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    ("✅ handleSubmit called");
 
     if (!name.trim() || !description.trim()) {
       alert("상품명과 설명을 입력해주세요!");
