@@ -49,11 +49,19 @@ export default function ProductForm({
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
+    const totalImages = previewUrls.length;
+
+    if (totalImages >= 3) {
+      alert("이미지는 최대 3장까지 등록할 수 있습니다.");
+      return;
+    }
+
+    const remainingSlots = 3 - totalImages;
+    const limitedFiles = files.slice(0, remainingSlots);
 
     const uploadedUrls: string[] = [];
 
-    for (const file of files) {
+    for (const file of limitedFiles) {
       try {
         const url = await uploadImageToS3(file);
         if (url && typeof url === "string") {
@@ -84,9 +92,7 @@ export default function ProductForm({
       formData.append("price", price.trim() ? Number(price).toString() : "0");
       formData.append("tags", JSON.stringify(tags));
       formData.append("imageUrls", JSON.stringify(previewUrls));
-      for (const [key, value] of formData.entries()) {
-        console.log("🧾 FormData:", key, value);
-      }
+
       if (category === "create") {
         createMutation.mutate(formData, {
           onError: (error) => {
@@ -159,6 +165,7 @@ export default function ProductForm({
                 <input
                   type="file"
                   accept="image/*"
+                  multiple
                   onChange={handleImageChange}
                   ref={fileInputRef}
                   className="hidden"

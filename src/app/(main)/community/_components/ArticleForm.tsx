@@ -26,7 +26,7 @@ export default function ArticleForm({
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>(
     initialData?.imageUrls || []
   );
-  const [newImageUrls, setNewImageUrls] = useState<string[]>([]); // ✅ Presigned 업로드된 URL
+  const [newImageUrls, setNewImageUrls] = useState<string[]>([]);
 
   const createMutation = useCreateArticle((id) =>
     router.push(`/community/${id}`)
@@ -37,9 +37,20 @@ export default function ArticleForm({
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+
+    const totalImages = existingImageUrls.length + newImageUrls.length;
+
+    if (totalImages >= 3) {
+      alert("이미지는 최대 3장까지 등록할 수 있습니다.");
+      return;
+    }
+
+    const remainingSlots = 3 - totalImages;
+    const limitedFiles = files.slice(0, remainingSlots);
+
     if (files.length === 0) return;
 
-    for (const file of files) {
+    for (const file of limitedFiles) {
       try {
         const url = await uploadImageToS3(file);
         setNewImageUrls((prev) => [...prev, url]);
@@ -131,6 +142,7 @@ export default function ArticleForm({
               <input
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={handleImageChange}
                 className="hidden"
               />
