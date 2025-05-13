@@ -111,13 +111,13 @@ export const uploadImageToS3 = async (file: File): Promise<string> => {
     throw new Error("Presigned URL 요청 실패");
   }
 
-  const { url, key } = await res.json();
+  const { uploadUrl, fileUrl } = await res.json();
 
-  if (!url || !key) {
+  if (!uploadUrl || !fileUrl) {
     throw new Error("Presigned 응답에 URL 또는 Key 없음");
   }
 
-  const uploadRes = await fetch(url, {
+  const uploadRes = await fetch(uploadUrl, {
     method: "PUT",
     headers: { "Content-Type": fileType },
     body: file,
@@ -127,5 +127,5 @@ export const uploadImageToS3 = async (file: File): Promise<string> => {
     throw new Error("S3 업로드 실패");
   }
 
-  return `https://${process.env.NEXT_PUBLIC_S3_BUCKET}.s3.${process.env.NEXT_PUBLIC_S3_REGION}.amazonaws.com/${key}`;
+  return fileUrl;
 };
