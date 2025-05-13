@@ -107,7 +107,15 @@ export const uploadImageToS3 = async (file: File): Promise<string> => {
     }
   );
 
+  if (!res.ok) {
+    throw new Error("Presigned URL 요청 실패");
+  }
+
   const { url, key } = await res.json();
+
+  if (!url || !key) {
+    throw new Error("Presigned 응답에 URL 또는 Key 없음");
+  }
 
   const uploadRes = await fetch(url, {
     method: "PUT",

@@ -36,7 +36,8 @@ export default function ProductForm({
   const createMutation = useCreateProduct({
     onSuccess: () => router.push("/items"),
   });
-  const updateMutation = useEditProduct(initialData?.id || "", {
+
+  const updateMutation = useEditProduct(initialData?.id ?? "undefined-id", {
     onSuccess: (id) => router.push(`/items/${id}`),
   });
 
@@ -55,18 +56,23 @@ export default function ProductForm({
     for (const file of files) {
       try {
         const url = await uploadImageToS3(file);
-        uploadedUrls.push(url);
+        if (url && typeof url === "string") {
+          uploadedUrls.push(url);
+        }
       } catch (error) {
         console.error("이미지 업로드 실패:", error);
       }
     }
 
-    setPreviewUrls((prev) => [...prev, ...uploadedUrls]);
+    if (uploadedUrls.length > 0) {
+      setPreviewUrls((prev) => [...prev, ...uploadedUrls]);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("✅ handleSubmit called");
+
     if (!name.trim() || !description.trim()) {
       alert("상품명과 설명을 입력해주세요!");
       return;
@@ -77,7 +83,6 @@ export default function ProductForm({
       formData.append("name", name);
       formData.append("description", description);
       formData.append("price", price.trim() ? Number(price).toString() : "0");
-
       formData.append("tags", JSON.stringify(tags));
       formData.append("imageUrls", JSON.stringify(previewUrls));
 
@@ -87,7 +92,9 @@ export default function ProductForm({
             console.error("Mutation 에러:", error);
           },
         });
-      } else if (category === "edit") {
+      }
+
+      if (category === "edit") {
         if (!initialData?.id) {
           console.warn("🛑 수정할 상품 ID가 존재하지 않음");
           return;
@@ -159,23 +166,32 @@ export default function ProductForm({
             )}
 
             <div className="flex flex-wrap gap-4">
-              {previewUrls.map((url, i) => (
-                <div key={i} className="relative w-24 h-24">
-                  <ImageWrapper
-                    src={url}
-                    alt={`preview-${i}`}
-                    fill
-                    className="object-cover rounded-md border"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(i)}
-                    className="absolute -top-2 -right-2"
-                  >
-                    <Image src={CloseIcon} alt="닫기" width={20} height={20} />
-                  </button>
-                </div>
-              ))}
+              {previewUrls
+                .filter(
+                  (url) => typeof url === "string" && url.startsWith("http")
+                )
+                .map((url, i) => (
+                  <div key={i} className="relative w-24 h-24">
+                    <ImageWrapper
+                      src={url}
+                      alt={`preview-${i}`}
+                      fill
+                      className="object-cover rounded-md border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(i)}
+                      className="absolute -top-2 -right-2"
+                    >
+                      <Image
+                        src={CloseIcon}
+                        alt="닫기"
+                        width={20}
+                        height={20}
+                      />
+                    </button>
+                  </div>
+                ))}
             </div>
           </div>
         </div>
