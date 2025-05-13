@@ -30,6 +30,14 @@ export default function DetailArticleBoard({
     }
   };
 
+  const handleEdit = () => {
+    window.location.href = `/community/${article.id}/modify`;
+  };
+
+  const handleDelete = () => {
+    window.location.href = "/community";
+  };
+
   return (
     <div>
       <div className="flex flex-col gap-4 pb-4 border-b border-custom-color-border-gray">
@@ -37,7 +45,12 @@ export default function DetailArticleBoard({
           <p className="text-xl font-bold text-custom-text-black-800">
             {article.title}
           </p>
-          <Selector type="article" id={article.id} />
+          <Selector
+            type="article"
+            id={article.id}
+            onDelete={handleDelete}
+            onEdit={handleEdit}
+          />
         </section>
 
         <section className="flex gap-4">
