@@ -71,7 +71,7 @@ export default function ProductForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("✅ handleSubmit called");
+    ("✅ handleSubmit called");
 
     if (!name.trim() || !description.trim()) {
       alert("상품명과 설명을 입력해주세요!");
@@ -85,7 +85,9 @@ export default function ProductForm({
       formData.append("price", price.trim() ? Number(price).toString() : "0");
       formData.append("tags", JSON.stringify(tags));
       formData.append("imageUrls", JSON.stringify(previewUrls));
-
+      for (const [key, value] of formData.entries()) {
+        console.log("🧾 FormData:", key, value);
+      }
       if (category === "create") {
         createMutation.mutate(formData, {
           onError: (error) => {

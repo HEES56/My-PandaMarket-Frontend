@@ -97,7 +97,7 @@ export const unlikeProduct = async (id: string): Promise<void> => {
 export const uploadImageToS3 = async (file: File): Promise<string> => {
   const fileType = file.type;
   const fileName = file.name;
-  console.log("📦 Uploading file:", file.name, fileType);
+
   const res = await customFetch(
     `/products/presigned-url?fileType=${encodeURIComponent(
       fileType
