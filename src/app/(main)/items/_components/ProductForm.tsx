@@ -36,7 +36,7 @@ export default function ProductForm({
   const createMutation = useCreateProduct({
     onSuccess: () => router.push("/items"),
   });
-  const updateMutation = useEditProduct(initialData?.id ?? "", {
+  const updateMutation = useEditProduct(initialData?.id || "", {
     onSuccess: (id) => router.push(`/items/${id}`),
   });
 
@@ -85,7 +85,11 @@ export default function ProductForm({
             console.error("Mutation 에러:", error);
           },
         });
-      } else if (category === "edit" && initialData?.id) {
+      } else if (category === "edit") {
+        if (!initialData?.id) {
+          console.warn("🛑 수정할 상품 ID가 존재하지 않음");
+          return;
+        }
         updateMutation.mutate(formData);
       }
     } catch (error) {
